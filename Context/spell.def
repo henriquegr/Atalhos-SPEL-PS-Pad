@@ -33,7 +33,7 @@
 %prefixo%=@E Prefixo dos eventos,,XPTO - 
 %duration%=@E Tempo em segundos,,3600
 %varpersid%=@E Variável com o persid,,zs_persid
-%msgerror%=@E Mensagem de Erro,,"Para alterar para o status " + zs_status + " é necessário preencher o campo " + zs_error
+%msgerror%=@E Mensagem de Erro,,"Para alterar para o status " + zs_status + " é necessário preencher o campo " + zs_erro
 %swvar%=@E Variável,,zs_valor
 %pk%=@E Atributo que serve como PK,,persistent_id
 %vpk%=@E Variável com o valor da pk,,zs_persid
@@ -268,14 +268,15 @@ if ( msg_error() ) {
 
     if (zi_erro > 0) { 
     	if (zi_erro == 1) {
-        	zs_error = %msgerror%;
+        	zs_erro = "%msgerror%";
     	} else {
-    	   zs_error = %msgerror%;
+    	   zs_erro = "%msgerror%";
     	} ;
 
-    	if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s %s", zs_metodo, zs_error ); } ;
+    	if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s %s", zs_metodo, zs_erro ); } ;
     	set_error(1);
-    	set_return_data(zs_error);
+    	set_return_data(zs_erro);
+    	z_bloco_fim(zi_depurar, zs_metodo);
     	return;
 
 	} else {
@@ -396,3 +397,14 @@ if (msg_error()) {
    logf (ERROR, "%s - Erro ao executar linha de comando '%s': %s", zs_metodo, zs_cmd, msg[0]);
    return;
 }   
+
+[delete | Exclui objeto]
+//Marca %obj% como deletada
+send_wait(0, %obj%, "dob_mark_delete") ;
+if ( msg_error() ) {
+    logf(ERROR, "%s ERRO ao Marcar como deletado: %s", zs_metodo,  msg[0]);
+    z_bloco_fim(zi_depurar, zs_metodo);
+} else {
+    if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Objeto excluido '%s'", zs_metodo, %obj%.persistent_id ); } ;
+}
+

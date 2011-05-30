@@ -2,10 +2,17 @@
 ; author:  Administrator
 ; last revision 28. Sep 2008  15:31
 ;
-[deref|deref]
+
+[Macro definition]
+%input%=@E Campo entrada=,,DRF_id
+%output%=@E Campo saida=,,id
+%fld%=@E Campo=,,id
+%tbl%=@E Tabela=,,ca_contact
+%wc%=@E Where=,,"userid=?"
+[deref |Formato padrão de deref]
 deref
 {
-input = DRF_owning_macro
-output = owning_macro
-rule = "SELECT persid FROM Spell_Macro WHERE sym=?"
+input = %input%
+output = %output%
+rule = "SELECT %fld% FROM %tbl% WHERE %wc%"
 }
