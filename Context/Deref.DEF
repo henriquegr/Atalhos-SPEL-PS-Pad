@@ -1,0 +1,11 @@
+; PSPad clip definition file for Deref
+; author:  Administrator
+; last revision 28. Sep 2008  15:31
+;
+[deref|deref]
+deref
+{
+input = DRF_owning_macro
+output = owning_macro
+rule = "SELECT persid FROM Spell_Macro WHERE sym=?"
+}

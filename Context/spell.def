@@ -1,0 +1,398 @@
+[Macro definition]
+%obj%=@E Objeto,,zo_cr,,
+%cmd%=@E Linha de comando,,"d:\\temp\\teste.bat",,
+%objt%=@E Objeto,,this,,
+%fld%=@E Campo,,""affected_resource"",,
+%val%=@E Valor,,""Valor"",,
+%desc%=@E Descrição,,Este script faz...,,
+%gl%=@E Group Leader,,zo_groupLeader,,
+%tggbhv%=@C Comportamento,,SURE_SET,SURE_SET;SUPRESS_TRIGGERS,
+%msg%=@E Mensagem,,"%s ",,
+%msg1%=@E Mensagem,,Mensagem,,
+%vars%=@E Mensagem,,"zs_metodo",,
+%objname%=@E Nome do obj,,cr,,
+%wc%=@E Clausula Where,,"object_uuid = U'%s'",,
+%vars1%=@E Vars do Where,,"zs_uuid",,
+%lst%=@E Lista,,zo_lista,,
+%qtdlst%=@E Len da lista,,zi_lista,,
+%var%=@E Var a ser populada,,zs_valor,,
+%attrs%=@E Atributos,,""id", "persistent_id"",,
+%attrsq%=@E Num de Attrs,,2,,
+%trigger_type%=@C Tipo de Trigger:,,PRE_VALIDATE,PRE_VALIDATE;POST_VALIDATE;POST_CI;DB_INIT;NEW_INIT,
+%indi%=@E Primeiro Item,,zi_index,,
+%indf%=@E Ultimo Item,,zi_index,,
+%oitem%=@E Item retornado,,zo_item,,
+%obslaco%=@E Comentário,,"Itera pelos items da zi_lista",,
+%for1%=@E Iterador,,"zi = 0",,
+%for2%=@E Limite,,"zi < zi_lista",,
+%for3%=@E Incremento,,"zi ++",,
+%sindexobs%=@E Observação,,"Encontra um ponto na frase",,
+%sindexstr%=@E String,,""Esta frase . tem um ponto no meio""
+%sindexreg%=@E Expressão regular,,""\\.""
+%sindexpos%=@E Posição,,1
+%prefixo%=@E Prefixo dos eventos,,XPTO - 
+%duration%=@E Tempo em segundos,,3600
+%varpersid%=@E Variável com o persid,,zs_persid
+%msgerror%=@E Mensagem de Erro,,"Para alterar para o status " + zs_status + " é necessário preencher o campo " + zs_error
+%swvar%=@E Variável,,zs_valor
+%pk%=@E Atributo que serve como PK,,persistent_id
+%vpk%=@E Variável com o valor da pk,,zs_persid
+%attr%=@E Atributo a obter,,last_name
+%logagt%=@E Log agent,,zs_uuidLogAgent
+
+[set | Seta o valor em um objeto que já fez CO] 
+//Define o valor zs_valor no campo zs_campo do objeto 
+zs_campo = %fld%;
+zs_valor = %val%;
+if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Persistindo valor: '%s' no campo '%s'", zs_metodo, zs_valor, zs_campo ); } ;
+send_wait(0, %objt%, "call_attr", zs_campo, "set_val", zs_valor, "%tggbhv%");
+if ( msg_error() ) {
+    logf(ERROR, "%s ERRO ao persistir valor: %s", zs_metodo,  msg[0]);
+    z_bloco_fim(zi_depurar, zs_metodo);
+    return;
+} else {
+    if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Valor persistido com sucesso", zs_metodo ); } ;
+} ;
+
+|
+
+[co | Faz Checkout de um objeto]
+//Faz o checkout do objeto zo_objeto
+if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Lockando registro", zs_metodo ); } ;	
+send_wait(0, %gl%, "checkout", %obj%); 
+if ( msg_error() ) {
+	zs_msg = format("%s Outras pessoas estão editando o registro %s - Não foi possível travar para gravação o registro.", (string) %obj%, zs_metodo )  ;
+	set_error(1);
+	set_return_data(zs_msg);
+    z_bloco_fim(zi_depurar, zs_metodo);                
+    return;
+} ;
+
+|
+
+[ci | Faz CheckIn de um objeto]
+// Faz o checkin do objeto zo_cr
+if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Persistindo o objeto no banco", zs_metodo ); } ;	
+send_wait(0, %gl%, "checkin", %obj%); 
+if ( msg_error() ) {
+    logf(ERROR, "%s Erro ao persistir valor: %s", zs_metodo, msg[0]);
+    z_bloco_fim(zi_depurar, zs_metodo);
+    return;
+} ;
+
+| 
+
+[logline | Cria uma linha de log]
+if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%msg%", %vars% ); } ;
+|
+[gl | Instancia um cursor (Group Leader)]
+//Cria um group leader
+if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Instanciando GL", zs_metodo ); } ;
+send_wait(0, top_object(), "get_co_group");
+if (msg_error()) {
+    logf(ERROR, "%s Erro ao instanciar GL: '%s'", msg[0]);
+    z_bloco_fim(zi_depurar, zs_metodo);
+    return;
+}
+%gl% = msg[0];
+if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Group leader: '%s'", zs_metodo, (string) %gl% ); } ;    
+
+|
+
+[fetch | Efetua uma busca no banco de dados a partir da clausula definida em zs_wc]
+//Efetua uma busca dos objetos %objname% no banco de dados a partir da clausula definida em zs_wc
+zs_wc = format("%wc%",%vars1% );
+if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Lista de %objname%: %s", zs_metodo,  zs_wc); } ;        
+send_wait( 0, top_object(), "call_attr", "%objname%", "sync_fetch",  "STATIC", zs_wc, -1, 0);
+if ( msg_error() ) {
+    logf(ERROR, "%s Erro ao definir lista de %objname%'s: %s", zs_metodo,  msg[0]);
+    z_bloco_fim(zi_depurar, zs_metodo);
+    return;
+} ;
+%lst% = msg[0] ;
+%qtdlst% = (int) msg[1] ;   
+
+|
+
+[get | Carrega valores do objeto]
+//Carrega valores do objeto %obj% na variável %var%
+if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Submetendo consulta ao objeto: %s", zs_metodo, (string) %obj% ); } ;  
+send_wait(0, %obj%, "get_attr_vals", %attrsq%, %attrs% ) ;
+if ( msg_error() ) {
+    logf(ERROR, "%s ERRO ao retornar atributos: %s", zs_metodo,  msg[0]);
+    z_bloco_fim(zi_depurar, zs_metodo);
+    return;
+} ;
+%var% = msg[3];
+
+|
+
+[bypersid | Instancia o objeto pelo seu persid]
+//Instancia o objeto  pelo seu persid e o atribui a variável %obj%
+if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Instanciando objeto: %s", zs_metodo, | zs_persid ); } ;        
+send_wait (0, top_object(), "call_attr", "%objname%", "dob_by_persid", NULL, zs_persid);
+if ( msg_error() ) {
+    logf(ERROR, "%s Erro ao instanciar objeto: %s", zs_metodo,  msg[0]);
+    z_bloco_fim(zi_depurar, zs_metodo);
+    return;
+} ;
+%obj%=msg[0];
+
+
+[index | Pega o zi_index item da lisat zo_lista]
+//Pega o %indi% item da lisat %lst%
+send_wait( 0, %lst%, "dob_by_index", "DEFAULT", %indi%, %indf%);
+if ( msg_error() ) {
+    logf(ERROR, "%s Erro ao identificar Grupo: %s", zs_metodo,  msg[0]);
+    z_bloco_fim(zi_depurar, zs_metodo);
+    return;
+} ;
+%oitem% = msg[0];
+
+|
+
+[newdob | Cria novo dob]
+//Cria novo dob "%objname%"
+
+if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Submete get_new_dob", zs_metodo); } ;        
+send_wait( 0, top_object(), "call_attr", "%objname%", "get_new_dob", "%objname%", %gl%, %gl%);
+if (msg_error()) {
+    logf(ERROR, "%s Erro ao criar %objname%: '%s'", zs_metodo, msg[0]);
+    return;
+}
+%obj% = msg[0];
+
+|
+
+[attevt |  Anexa um evento ao ticket]
+//Cria um evento e associa-o ao ticket
+send_wait(0, top_object(), "call_attr", "evt","new_attached_event", zo_groupLeader, %varpersid%, "%prefixo%", (duration) %duration%, (date) NULL, (string) NULL, 0, 0);
+if ( msg_error() ) {
+    logf(ERROR, "%s ERRO ao associar evento '%s' ao ticket '%s': %s", zs_metodo, "%prefixo%", %varpersid%, msg[0]);
+    z_bloco_fim(zi_depurar, zs_metodo);
+    return;
+} else {
+    if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Evento '%s' associado com sucesso ao ticket '%s'", zs_metodo, "%prefixo%", %varpersid%  ); } ;
+} ;
+|
+;
+[spell | Formato padrão de um script spell]
+%FileName2%(...)
+{
+    
+    
+	int zi, zi_depurar;
+	string zs_metodo;
+	zs_metodo = '%FileName2% - ';
+
+    // Alterar valor zi_depurar parar 1 para debug mode
+    zi_depurar = 1;
+        
+    // Entrada para debug mode
+    if ( zi_depurar==1 ) { 
+        logf(SIGNIFICANT, "============================================================="); 
+        logf(SIGNIFICANT, "%s Inicio - $s", zs_metodo, (string) now());
+        logf(SIGNIFICANT, "%s User - '%s'", zs_metodo, thread_userid());
+        logf(SIGNIFICANT, "%s ARG Count : %d", zs_metodo, argc);
+        for (zi=0; zi<argc; zi+=1) {
+            logf(SIGNIFICANT, "%s ARG #%s : %s", zs_metodo, (string) zi, (string) argv[zi]);          
+        } ;
+        logf(SIGNIFICANT, "============================================================="); 
+    } ;      
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // Inicio do codigo
+    string zs_msg, zs_campo, zs_valor, zs_wc, zs_status, zs_persid, zs_uuidLogAgent;
+    object zo_groupLeader, zo_cr, zo_lista, zo_item;
+    int zi_lista, zi_index;
+    
+    |
+    
+            
+
+    // Fim do codigo
+    ///////////////////////////////////////////////////////////////////////////////////////
+	z_bloco_fim(zi_depurar, zs_metodo);
+
+} ;
+
+[trigger | Header padrão de uma trigger]
+////////////////////////////////////////////////////////////////////////
+// Trigger:     %FileName%
+// Author:      Henrique Grammelsbacher
+// Created:     %DateTime%
+// Use Case:    Spec X.X - UC 1.1.1.1
+// Modified by: 
+// Modified:
+//
+// Description: %desc%
+//
+// Parameters (trigger input):
+//      ARG[3]   : persid 
+//      ARG[6]   : producer_id 
+//
+////////////////////////////////////////////////////////////////////////
+|
+[preupdate | Estrutura padrão de uma trigger de Pre Update]
+%FileName2%(...)
+{
+    
+    
+	int zi, zi_depurar;
+	string zs_metodo;
+	zs_metodo = '%FileName2% - ';
+
+    // Alterar valor zi_depurar parar 1 para debug mode
+    zi_depurar = 1;
+        
+    // Entrada para debug mode
+    if ( zi_depurar==1 ) { 
+        logf(SIGNIFICANT, "============================================================="); 
+        logf(SIGNIFICANT, "%s Inicio - $s", zs_metodo, (string) now());
+        logf(SIGNIFICANT, "%s User - '%s'", zs_metodo, thread_userid());
+        logf(SIGNIFICANT, "%s ARG Count : %d", zs_metodo, argc);
+        for (zi=0; zi<argc; zi+=1) {
+            logf(SIGNIFICANT, "%s ARG #%s : %s", zs_metodo, (string) zi, (string) argv[zi]);          
+        } ;
+        logf(SIGNIFICANT, "============================================================="); 
+    } ;      
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // Inicio do codigo
+    string zs_msg, zs_campo, zs_valor, zs_wc, zs_persid, zs_erro, zs_status;
+    object zo_groupLeader, zo_cr, zo_lista, zo_item;
+    int zi_lista, zi_index, zi_erro;
+    zs_status = argv[3];
+    |
+
+
+
+
+    if (zi_erro > 0) { 
+    	if (zi_erro == 1) {
+        	zs_error = %msgerror%;
+    	} else {
+    	   zs_error = %msgerror%;
+    	} ;
+
+    	if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s %s", zs_metodo, zs_error ); } ;
+    	set_error(1);
+    	set_return_data(zs_error);
+    	return;
+
+	} else {
+
+        if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Dados consistidos, retornando sem erro!", zs_metodo ); } ;
+
+    } ;
+    
+    // Fim do codigo
+    ///////////////////////////////////////////////////////////////////////////////////////
+	z_bloco_fim(zi_depurar, zs_metodo);
+
+} ;
+
+
+
+[for | Estrutura do laço for]
+for ( %for1% ; %for2%; %for3%) { //%obslaco%
+    |
+} ; //Fim do for que %obslaco%
+
+[top | Referência ao Top Object]
+(object) "@|Domserver|top|0"
+
+[fim | Funcao para registrar o bloco fim de um script]
+z_bloco_fim(zi_depurar, zs_metodo);
+|
+
+[sindex | Estrutura padrão do sdindex - Este ex. encontra um ponto na frase]
+sindex(%sindexstr%, %sindexreg% ,%sindexpos%);|
+
+[substr | Estrutura padrão do substr]
+substr(%sindexstr%, %sindexreg%)
+
+[print | Forma padrão do comando print]
+printf("%s %msg1% \n", zs_metodo);
+|
+
+[expand | Estrutura padrão de uma expansão de variável]
+expand(format("&{%s = %objname%.%pk%->%attr%}", %vpk% ) )|
+
+[switch | Estrutura padrão switch]
+switch ( %swvar% ) {
+    case "|valor1": 
+        set_error(1);
+        break;
+    case "valor2":
+        set_error(0);
+        break;
+} ;
+
+
+
+[method | Header padrão de um método]
+////////////////////////////////////////////////////////////////////////
+// Method:      %FileName2%
+// Author:      Henrique Grammelsbacher
+// Created:     %DateTime%
+// Use Case:    Spec X.X - UC 1.1.1.1
+// Modified by: 
+// Modified:
+//
+// Description: %desc% 
+//
+// Parameters:  |
+//              zs_pcatGroups       - Lista de grupos
+//              zi_pcatGroups       - Numero de grupos na lista
+//              zs_local            - ID do local a ser verificado
+//
+////////////////////////////////////////////////////////////////////////
+
+[file | Header padrão de um arquivo]
+////////////////////////////////////////////////////////////////////////
+// Module:      %FileName%
+// Author:      Henrique Grammelsbacher
+// Created:     %DateTime%
+////////////////////////////////////////////////////////////////////////
+|
+
+[funcblocofim | Função padrão Bloco Fim]
+////////////////////////////////////////////////////////////////////////
+// Method:      z_bloco_fim()
+// Author:      Henrique Grammelsbacher
+// Created:     12/26/2007 5:20:50 PM
+//
+//  Description: Grava em log o fim de bloco de depuração
+//
+////////////////////////////////////////////////////////////////////////
+
+z_bloco_fim(int depurar, string metodo) {
+    if ( depurar==1 ) { 
+        logf(SIGNIFICANT, "============================================================="); 
+        logf(SIGNIFICANT, "%s Fim - %s", metodo, now()); 
+        logf(SIGNIFICANT, "============================================================="); 
+    } ;
+} ;
+
+[initIss | Metodo para inicialização de ticket]
+send_wait( 0, %obj%, "init_issue", (uuid) %logagt%, (string) "%msg1%");
+if (msg_error()) {
+    logf(ERROR, "%s Erro ao inicializar o ticket de Issue: %s", metodo, msg[1]);
+    return;
+} ;
+
+
+[cmd | Executa uma linha de comando do SO]
+//Aqui a linha de comando a ser executada
+zs_cmd = "%cmd%";
+
+//Limpando caracteres especiais
+zs_cmd = gsub(zs_cmd, "\0015", "");
+zs_cmd = gsub(zs_cmd, "\0012", "#!#n#@#");    
+
+//Iniciando o processo para execução
+if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Executando linha de comando: '%s'", zs_metodo, (string) zs_cmd ); } ;  
+send(bpnotify_object(), "create_process", zs_cmd);
+if (msg_error()) {
+   logf (ERROR, "%s - Erro ao executar linha de comando '%s': %s", zs_metodo, zs_cmd, msg[0]);
+   return;
+}   

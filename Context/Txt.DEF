@@ -1,0 +1,34 @@
+; PSPad code template for URI
+; Created by PSPad   22.11.2008  09:33
+; Author:  Administrator
+;
+[ffile | Cabeçalio do arquivos de fixes USvD]
+********************************************************************************
+*                                                                              *
+* Interadat - Otimização de processos de TI                                    *
+* Histórico de atualizações do pacote de roll-out                              *
+*                                                                              *
+* Data de criação: %DateTime%                                                  
+*                                                                              *
+********************************************************************************
+|
+;
+[fix | Resumo de funcionalidade implementada]
+--------------------------------------------------------------------------------
+Resumo: |Descrição do erro
+Data:   %DateTime%
+Autor:  %UserName%
+--
+Tipo: Melhoria / Erro / Nova Funcionalidade - Caso de uso: x.x.x.x
+--
+Implementação:
+
+    Descrição da correção ou melhoria implementada
+    
+--
+Arquivos envolvidos:
+- 
+    . arquivo1
+    . arquivo2
+
+--------------------------------------------------------------------------------

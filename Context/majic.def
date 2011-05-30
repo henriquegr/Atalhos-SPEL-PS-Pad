@@ -1,0 +1,57 @@
+; PSPad clip definition file for Majic
+; author:  Administrator
+; last revision 10. Oct 2008  20:52
+;
+
+[Macro definition]
+%obj%=@E Objeto=,,cr,,
+%trigger_type%=@C Tipo de Trigger:,,PRE_VALIDATE,PRE_VALIDATE;POST_VALIDATE;POST_CI;DB_INIT;NEW_INIT,
+%trigger%=@E Trigger=,,z_cr_nome_da_trigger,,
+%vars%=@E Parametros,,"persistent_id, producer_id"
+%order%=@E Posição=,,5000
+%event%=@C Eventos=,,INSERT UPDATE,"INSERT UPDATE";INSERT;UPDATE;INSERT UPDATE;DELETE,
+%filter%=@C Filtro,,status{},"status{NULL->}";"status{->'OP'}";"status=='OP'";"status{}"
+%desc%=@E Descrição,,"Dispara z_cr_nome_da_trigger em qualquer alteração de status"
+
+[trigger | Formato generico de trigger]
+// Author:      Henrique Grammelsbacher - %DateTime% 
+// Description: %desc% 
+MODIFY %obj% %trigger_type%
+    %trigger%( %vars% )
+    %order% FILTER( (EVENT("%event%")) && ( %filter% ) ) ;
+
+|
+
+
+[file |Header padrão do arquivo]
+////////////////////////////////////////////////////////////////////////////
+// Module:      %FileName%
+// Author:      Henrique Grammelsbacher
+// Created:     %DateTime%
+////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////
+//
+// Description: |
+//              
+////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// DB INIT - 3xxx
+
+
+////////////////////////////////////////////////////////////////////////////////
+// NEW_INIT - 4xxx
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Pre Validate - 5xxx
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Post Validate - 6xxx
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Post CI - 7xxx
+

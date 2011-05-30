@@ -1,0 +1,14 @@
+; PSPad clip definition file for HTMPL
+; author:  Administrator
+; last revision 04. Jun 2009  10:42
+;
+
+[Macro definition]
+%CommText%=@E Comentario=
+
+[jcom |Bloco de comentário padrão]
+//*************************************
+// %DateTime% - Henrique Grammelsbacher 
+// %CommText%
+|
+
