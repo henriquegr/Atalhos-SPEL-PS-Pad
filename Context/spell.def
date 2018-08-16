@@ -1,5 +1,6 @@
 [Macro definition]
 %obj%=@E Objeto,,zo_cr,,
+%objmac%=@E Objeto,,zo_macro,,
 %cmd%=@E Linha de comando,,"d:\\temp\\teste.bat",,
 %objt%=@E Objeto,,this,,
 %fld%=@E Campo,,""affected_resource"",,
@@ -47,7 +48,9 @@ zs_valor = %val%;
 if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Persistindo valor: '%s' no campo '%s'", zs_metodo, zs_valor, zs_campo ); } ;
 send_wait(0, %objt%, "call_attr", zs_campo, "set_val", zs_valor, "%tggbhv%");
 if ( msg_error() ) {
-    logf(ERROR, "%s ERRO ao persistir valor: %s", zs_metodo,  msg[0]);
+	for (zi_loop_error=0; zi_loop_error<msg_length(); zi_loop_error++) {
+	    logf(ERROR, "%s ERRO ao persistir valor: %s", zs_metodo,  msg[zi_loop_error]);
+	}               
     z_bloco_fim(zi_depurar, zs_metodo);
     return;
 } else {
@@ -61,6 +64,11 @@ if ( msg_error() ) {
 if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Lockando registro", zs_metodo ); } ;	
 send_wait(0, %gl%, "checkout", %obj%); 
 if ( msg_error() ) {
+    zs_msg = "";
+	for (zi_loop_error=0; zi_loop_error<msg_length(); zi_loop_error++) {
+	    logf(ERROR, "%s ERRO ao fazer Checkout: %s", zs_metodo,  msg[zi_loop_error]);
+	    zs_msg = zs_msg + msg[zi_loop_error];
+	}               
 	zs_msg = format("%s Outras pessoas estão editando o registro %s - Não foi possível travar para gravação o registro.", (string) %obj%, zs_metodo )  ;
 	set_error(1);
 	set_return_data(zs_msg);
@@ -75,7 +83,10 @@ if ( msg_error() ) {
 if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Persistindo o objeto no banco", zs_metodo ); } ;	
 send_wait(0, %gl%, "checkin", %obj%); 
 if ( msg_error() ) {
-    logf(ERROR, "%s Erro ao persistir valor: %s", zs_metodo, msg[0]);
+	for (zi_loop_error=0; zi_loop_error<msg_length(); zi_loop_error++) {
+	    logf(ERROR, "%s ERRO ao fazer Checkin: %s", zs_metodo,  msg[zi_loop_error]);
+	}               
+    send_wait(0, %gl%, "uncheck");
     z_bloco_fim(zi_depurar, zs_metodo);
     return;
 } ;
@@ -90,7 +101,9 @@ if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%msg%", %vars% ); } ;
 if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Instanciando GL", zs_metodo ); } ;
 send_wait(0, top_object(), "get_co_group");
 if (msg_error()) {
-    logf(ERROR, "%s Erro ao instanciar GL: '%s'", msg[0]);
+	for (zi_loop_error=0; zi_loop_error<msg_length(); zi_loop_error++) {
+	    logf(ERROR, "%s ERRO ao Instanciar GLr: %s", zs_metodo,  msg[zi_loop_error]);
+	}               
     z_bloco_fim(zi_depurar, zs_metodo);
     return;
 }
@@ -105,7 +118,10 @@ zs_wc = format("%wc%",%vars1% );
 if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Lista de %objname%: %s", zs_metodo,  zs_wc); } ;        
 send_wait( 0, top_object(), "call_attr", "%objname%", "sync_fetch",  "STATIC", zs_wc, -1, 0);
 if ( msg_error() ) {
-    logf(ERROR, "%s Erro ao definir lista de %objname%'s: %s", zs_metodo,  msg[0]);
+	for (zi_loop_error=0; zi_loop_error<msg_length(); zi_loop_error++) {
+        logf(ERROR, "%s Erro ao definir lista de %objname%'s: %s", zs_metodo,  msg[zi_loop_error]);
+	}               
+
     z_bloco_fim(zi_depurar, zs_metodo);
     return;
 } ;
@@ -119,7 +135,9 @@ if ( msg_error() ) {
 if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Submetendo consulta ao objeto: %s", zs_metodo, (string) %obj% ); } ;  
 send_wait(0, %obj%, "get_attr_vals", %attrsq%, %attrs% ) ;
 if ( msg_error() ) {
-    logf(ERROR, "%s ERRO ao retornar atributos: %s", zs_metodo,  msg[0]);
+	for (zi_loop_error=0; zi_loop_error<msg_length(); zi_loop_error++) {
+        logf(ERROR, "%s ERRO ao retornar atributos: %s", zs_metodo,  msg[zi_loop_error]);
+	}               
     z_bloco_fim(zi_depurar, zs_metodo);
     return;
 } ;
@@ -129,10 +147,12 @@ if ( msg_error() ) {
 
 [bypersid | Instancia o objeto pelo seu persid]
 //Instancia o objeto  pelo seu persid e o atribui a variável %obj%
-if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Instanciando objeto: %s", zs_metodo, | zs_persid ); } ;        
-send_wait (0, top_object(), "call_attr", "%objname%", "dob_by_persid", NULL, zs_persid);
+if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Instanciando objeto %objname%: %s", zs_metodo, | %varpersid% ); } ;        
+send_wait (0, top_object(), "call_attr", "%objname%", "dob_by_persid", NULL, %varpersid%);
 if ( msg_error() ) {
-    logf(ERROR, "%s Erro ao instanciar objeto: %s", zs_metodo,  msg[0]);
+	for (zi_loop_error=0; zi_loop_error<msg_length(); zi_loop_error++) {
+        logf(ERROR, "%s Erro ao instanciar objeto '%s': %s", zs_metodo,  %varpersid%, msg[zi_loop_error]);
+	}               
     z_bloco_fim(zi_depurar, zs_metodo);
     return;
 } ;
@@ -143,7 +163,9 @@ if ( msg_error() ) {
 //Pega o %indi% item da lisat %lst%
 send_wait( 0, %lst%, "dob_by_index", "DEFAULT", %indi%, %indf%);
 if ( msg_error() ) {
-    logf(ERROR, "%s Erro ao identificar Grupo: %s", zs_metodo,  msg[0]);
+	for (zi_loop_error=0; zi_loop_error<msg_length(); zi_loop_error++) {
+        logf(ERROR, "%s Erro ao identificar item da lista %lst% indice '%s': %s", zs_metodo, (string) %indi%, msg[zi_loop_error]);
+	}               
     z_bloco_fim(zi_depurar, zs_metodo);
     return;
 } ;
@@ -157,7 +179,9 @@ if ( msg_error() ) {
 if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Submete get_new_dob", zs_metodo); } ;        
 send_wait( 0, top_object(), "call_attr", "%objname%", "get_new_dob", "%objname%", %gl%, %gl%);
 if (msg_error()) {
-    logf(ERROR, "%s Erro ao criar %objname%: '%s'", zs_metodo, msg[0]);
+	for (zi_loop_error=0; zi_loop_error<msg_length(); zi_loop_error++) {
+        logf(ERROR, "%s Erro ao criar %objname%: '%s'", zs_metodo, msg[zi_loop_error]);
+	}               
     return;
 }
 %obj% = msg[0];
@@ -168,7 +192,9 @@ if (msg_error()) {
 //Cria um evento e associa-o ao ticket
 send_wait(0, top_object(), "call_attr", "evt","new_attached_event", zo_groupLeader, %varpersid%, "%prefixo%", (duration) %duration%, (date) NULL, (string) NULL, 0, 0);
 if ( msg_error() ) {
-    logf(ERROR, "%s ERRO ao associar evento '%s' ao ticket '%s': %s", zs_metodo, "%prefixo%", %varpersid%, msg[0]);
+	for (zi_loop_error=0; zi_loop_error<msg_length(); zi_loop_error++) {
+        logf(ERROR, "%s ERRO ao associar evento '%s' ao ticket '%s': %s", zs_metodo, "%prefixo%", %varpersid%, msg[zi_loop_error]);
+	}               
     z_bloco_fim(zi_depurar, zs_metodo);
     return;
 } else {
@@ -203,7 +229,7 @@ if ( msg_error() ) {
     // Inicio do codigo
     string zs_msg, zs_campo, zs_valor, zs_wc, zs_status, zs_persid, zs_uuidLogAgent;
     object zo_groupLeader, zo_cr, zo_lista, zo_item;
-    int zi_lista, zi_index;
+    int zi_lista, zi_index, zi_loop_error;
     
     |
     
@@ -259,7 +285,7 @@ if ( msg_error() ) {
     // Inicio do codigo
     string zs_msg, zs_campo, zs_valor, zs_wc, zs_persid, zs_erro, zs_status;
     object zo_groupLeader, zo_cr, zo_lista, zo_item;
-    int zi_lista, zi_index, zi_erro;
+    int zi_lista, zi_index, zi_erro, zi_loop_error;
     zs_status = argv[3];
     |
 
@@ -291,8 +317,6 @@ if ( msg_error() ) {
 
 } ;
 
-
-
 [for | Estrutura do laço for]
 for ( %for1% ; %for2%; %for3%) { //%obslaco%
     |
@@ -316,7 +340,7 @@ printf("%s %msg1% \n", zs_metodo);
 |
 
 [expand | Estrutura padrão de uma expansão de variável]
-expand(format("&{%s = %objname%.%pk%->%attr%}", %vpk% ) )|
+expand(format("&{%s = %objname%.%pk%->%attr%}", %vpk% ) );|
 
 [switch | Estrutura padrão switch]
 switch ( %swvar% ) {
@@ -377,7 +401,10 @@ z_bloco_fim(int depurar, string metodo) {
 [initIss | Metodo para inicialização de ticket]
 send_wait( 0, %obj%, "init_issue", (uuid) %logagt%, (string) "%msg1%");
 if (msg_error()) {
-    logf(ERROR, "%s Erro ao inicializar o ticket de Issue: %s", metodo, msg[1]);
+	for (zi_loop_error=0; zi_loop_error<msg_length(); zi_loop_error++) {
+        logf(ERROR, "%s Erro ao inicializar o ticket de Issue: %s", metodo, msg[zi_loop_error]);
+	}               
+    
     return;
 } ;
 
@@ -394,17 +421,48 @@ zs_cmd = gsub(zs_cmd, "\0012", "#!#n#@#");
 if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Executando linha de comando: '%s'", zs_metodo, (string) zs_cmd ); } ;  
 send(bpnotify_object(), "create_process", zs_cmd);
 if (msg_error()) {
-   logf (ERROR, "%s - Erro ao executar linha de comando '%s': %s", zs_metodo, zs_cmd, msg[0]);
-   return;
+	for (zi_loop_error=0; zi_loop_error<msg_length(); zi_loop_error++) {
+        logf(ERROR, "%s - Erro ao executar linha de comando '%s': %s", zs_metodo, zs_cmd, msg[zi_loop_error]);
+	} 
+    z_bloco_fim(zi_depurar, zs_metodo);
+    return;
 }   
 
 [delete | Exclui objeto]
 //Marca %obj% como deletada
 send_wait(0, %obj%, "dob_mark_delete") ;
 if ( msg_error() ) {
-    logf(ERROR, "%s ERRO ao Marcar como deletado: %s", zs_metodo,  msg[0]);
+	for (zi_loop_error=0; zi_loop_error<msg_length(); zi_loop_error++) {
+        logf(ERROR, "%s ERRO ao Marcar como deletado: %s", zs_metodo,  msg[zi_loop_error]);
+	} 
     z_bloco_fim(zi_depurar, zs_metodo);
+    return;
 } else {
     if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Objeto excluido '%s'", zs_metodo, %obj%.persistent_id ); } ;
 }
+
+[llog |Cria header simplificado de log]
+string zs_metodo;
+zs_metodo = '%FileName2% - ';
+logf(SIGNIFICANT, "%s Inicio - %s", zs_metodo, (string) now());
+
+
+[macro |Executa uma macro em um objeto]
+if (zi_depurar==1) logf(SIGNIFICANT, "%s Executando a macro '%s'", zs_metodo, %objmac%.sym);
+send_wait(0, %objmac%, "execute", %obj%, NULL, NULL, NULL, NULL, NULL, NULL);
+if (msg_error()) {
+	for (zi_loop_error=0; zi_loop_error<msg_length(); zi_loop_error++) {
+        logf(ERROR, "%s - Erro ao executar macro: %s", zs_metodo, msg[zi_loop_error]);
+	} 
+    z_bloco_fim(zi_depurar, zs_metodo);
+    return;
+}   
+|
+
+[if |Formato padra de if]
+if (|) {
+
+} else {
+
+} ;
 
