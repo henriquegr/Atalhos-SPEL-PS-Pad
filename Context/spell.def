@@ -40,6 +40,11 @@
 %vpk%=@E Variável com o valor da pk,,zs_persid
 %attr%=@E Atributo a obter,,last_name
 %logagt%=@E Log agent,,zs_uuidLogAgent
+%funcjs%=@E Nome da funcao,,zpopulaCallback
+%var1%=@E Variável id para retorno,,zs_valor
+%var2%=@E Variável label para retorno,,zs_label
+
+
 
 [set | Seta o valor em um objeto que já fez CO] 
 //Define o valor zs_valor no campo zs_campo do objeto 
@@ -217,7 +222,7 @@ if ( msg_error() ) {
     // Entrada para debug mode
     if ( zi_depurar==1 ) { 
         logf(SIGNIFICANT, "============================================================="); 
-        logf(SIGNIFICANT, "%s Inicio - $s", zs_metodo, (string) now());
+        logf(SIGNIFICANT, "%s Inicio - %s", zs_metodo, (string) now());
         logf(SIGNIFICANT, "%s User - '%s'", zs_metodo, thread_userid());
         logf(SIGNIFICANT, "%s ARG Count : %d", zs_metodo, argc);
         for (zi=0; zi<argc; zi+=1) {
@@ -465,4 +470,23 @@ if (|) {
 } else {
 
 } ;
+
+
+[callback |Bloco de código que executa um js no formulário ]
+zs_callback = ("parent.ahdframe.%funcjs%('" + 
+    format_to_js((string) %var1%) + "', '" + 
+    format_to_js((string) %var2%) + "'); \n");
+
+if ( zi_depurar==1 ) { logf(SIGNIFICANT, "%s Callback '%s'", zs_metodo, zs_callback ); } ;
+send_frame_resp((long)zi_id, (object)zo_obj, (string)zs_callback);
+
+
+
+[webop |Variaveis iniciais para criacao de um webop]
+long zi_id;
+string zs_callback, zs_label;
+object zo_obj, zo_nr;
+
+zi_id = argv[0];
+zo_obj = argv[1];
 
